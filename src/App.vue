@@ -129,17 +129,16 @@ function initScene() {
   dracoLoader.preload();
   loader.setDRACOLoader(dracoLoader)
   loader.load('/cat7.0.gltf', function (gltf: GltfType) {
+    getStorage();
     renderLight()
     scene.add(gltf.scene);
     const mixer = new THREE.AnimationMixer(scene);
     console.log(gltf.cameras[0]);
-
     mixer.clipAction(gltf.animations[0]).play()
     const animate = () => {
       requestAnimationFrame(animate);
       const delta = clock.getDelta()
       renderer.render(scene, gltf.cameras[0]);
-      
       mixer.update(delta)
     }
     animate()
@@ -188,7 +187,6 @@ watchEffect(() => {
       return {
         ...v,
         light: null,
-        entity: null
       }
     })))
   }
@@ -197,13 +195,6 @@ watchEffect(() => {
 function getStorage() {
   const storageLights = JSON.parse(localStorage.getItem('lights') || '[]')
   lights.push(...storageLights)
-  const storageAmbient = JSON.parse(localStorage.getItem('ambient') || "{}");
-  if (storageAmbient?.color) {
-    ambientLight.color = storageAmbient.color
-  }
-  if (storageAmbient?.intensity) {
-    ambientLight.intensity = storageAmbient.intensity
-  }
   isGotStorage.value = true;
 }
 const options = [defaultAmbientLightSetting, defaultDirectLight, defaultHemisphereLight, defaultPointLight, defaultSpotLight]
@@ -271,7 +262,7 @@ onMounted(() => {
     padding: 10px 20px 10px;
     display: flex;
     align-items: center;
-    background: rgba(35, 35, 35, 0.54);
+    // background: rgba(35, 35, 35, 0.54);
     border-radius: 10px;
 
     button {
@@ -334,8 +325,8 @@ onMounted(() => {
     width: 470px;
     height: 95vh;
     overflow-y: scroll;
-    background: rgba(255, 255, 255, .7);
-    box-shadow: 2px 2px 10px rgba(0, 0, 0, .2);
+    background-image: linear-gradient(to top, #e6e9f0 0%, #eef1f5 100%);
+    box-shadow: 0 0 10px rgba(255, 255, 255, .2);
     border-radius: 10px;
 
     &::-webkit-scrollbar {

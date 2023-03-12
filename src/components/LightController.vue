@@ -96,7 +96,7 @@ const angle = computed({
         <el-button class="del" type="danger" @click="emit('handleDel')">×</el-button>
         <el-row :gutter="10" justify="space-between" :align="'middle'">
             <el-col :span="16">
-                <h2>{{ LightName[props.type] }}</h2>
+                <h2 :class="props.type">{{ LightName[props.type] }}</h2>
             </el-col>
             <el-col :span="3">
                 <el-switch v-model="visible" />
@@ -134,7 +134,7 @@ const angle = computed({
             <el-col :span="4">
                 <span>角度：</span>
             </el-col>
-            <el-col :span="20"> <el-slider v-model="angle" :step="0.01" :max="1.56" :min="0.1" show-input />
+            <el-col :span="20"> <el-slider v-model="angle" :step="0.01" :max="1.56" :min="0" show-input />
             </el-col>
         </el-row>
         <el-row :gutter="10" v-if="props.position">
@@ -182,7 +182,23 @@ const angle = computed({
     h2 {
         -webkit-text-fill-color: transparent;
         -webkit-background-clip: text;
-        background-image: linear-gradient(to top, #48c6ef 0%, #6f86d6 100%);
+        &.AmbientLight {
+          
+            background-image: linear-gradient(to right, #f9d423 0%, #ff4e50 100%);
+
+        }
+        &.DirectionalLight {
+            background-image: linear-gradient(45deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%);
+        }
+        &.HemisphereLight {
+            background-image: linear-gradient(-225deg, #69EACB 0%, #EACCF8 48%, #6654F1 100%);
+        }
+        &.PointLight {
+            background-image: linear-gradient(to top, #48c6ef 0%, #6f86d6 100%);
+        }
+        &.SpotLight {
+            background-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
     }
 
     .del {
