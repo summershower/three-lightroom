@@ -94,16 +94,18 @@ function renderLight() {
         break;
       case 'DirectionalLight':
         light = new THREE.DirectionalLight(lights[i].color, lights[i].intensity);
+        light.castShadow = true;
         break;
       case 'HemisphereLight':
         light = new THREE.HemisphereLight(lights[i].skyColor, lights[i].groundColor, lights[i].intensity);
         break;
       case 'PointLight':
         light = new THREE.PointLight(lights[i].color, lights[i].intensity, 0);
+        light.castShadow = true;
         break;
       case 'SpotLight':
         light = new THREE.SpotLight(lights[i].color, lights[i].intensity, 0, lights[i].angle);
-
+        light.castShadow = true;
         break;
       default:
         break;
@@ -121,7 +123,7 @@ function initScene() {
   });
   renderer.setSize(600, 600);
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  // renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   boxRef.value.appendChild(renderer.domElement);
   const loader = new GLTFLoader()
   const dracoLoader = new DRACOLoader()
@@ -129,6 +131,18 @@ function initScene() {
   dracoLoader.preload();
   loader.setDRACOLoader(dracoLoader)
   loader.load('/cat7.0.gltf', function (gltf: GltfType) {
+    console.log(gltf);
+    gltf.scene.children?.forEach(v=>{
+      // if(v.)
+    })
+    //Create a plane that receives shadows (but does not cast them)
+    const planeGeometry = new THREE.PlaneGeometry(300, 300);
+    const planeMaterial = new THREE.MeshStandardMaterial({ color: 'pink' })
+    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane.rotation.x = -90 * Math.PI / 180;
+    plane.receiveShadow = true;
+    scene.add(plane);
+
     getStorage();
     renderLight()
     scene.add(gltf.scene);
@@ -208,6 +222,7 @@ function handleAdd() {
 
 }
 function del(index: number) {
+  (lights[index] as any).light.visible = true;
   (lights[index] as any).light.removeFromParent()
   lights.splice(index, 1);
   console.log(scene.children);
