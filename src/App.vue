@@ -4,17 +4,15 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import M from '../public/model/cat7.0.gltf?url'
-import DirectLightController from './components/DirectLightController.vue'
-import PointLightController from './components/PointLightController.vue';
-import SpotLightController from './components/SpotLightController.vue';
-
+import LightController from './components/LightController.vue';
+import { LightName, LightSettings, GltfType, AmbientLightSettings, DirectionalLightSettings, HemisphereLightSettings, PointLightSettings, SpotLightSettings } from './types';
 
 const clock = new THREE.Clock();
 const scene = new THREE.Scene();
-
 const isDragging = ref(false);
 const hasModel = ref(false);
 const boxRef = ref();
+
 function handleDragEnter(e: DragEvent) {
   isDragging.value = true;
 
@@ -25,84 +23,97 @@ function handleDragLeave(e: DragEvent) {
 
 function handleDragOver(e: DragEvent) { }
 
-const ambientLight = reactive({
-  color: 'rgba(54, 57, 54, 1)',
+const defaultAmbientLightSetting = {
+  visible: true,
+  type: 'AmbientLight',
+  name: '环境光',
+  color: 'rgb(255,255,255)',
   intensity: 1,
-})
-let ambientLightObject
+  light: null
+}
 const defaultDirectLight = {
-  enabled: true,
-  type: 'DirectLight',
-  rotation: [0, 0, 0],
-  intensity: 0.5,
-  color: 'rgba(255, 255, 255, 1)',
-  light: null,
-  entity: null,
-  enableShadow: false,
-  shadowBias: 1,
-  shadowNearPlane: 0.1,
-  shadowNormalBias: 0.1,
-  shadowStrength: 1.0,
+  visible: true,
+  type: 'DirectionalLight',
+  name: '定向光',
 
+  position: [0, 1, 0],
+  intensity: 1,
+  color: 'rgba(255, 255, 255)',
+  light: null,
+}
+const defaultHemisphereLight = {
+  visible: true,
+  type: 'HemisphereLight',
+  name: '半球光',
+  intensity: 1,
+  skyColor: 'rgb(255,255,255)',
+  groundColor: 'rgb(255,255,255)',
+  light: null,
 }
 const defaultPointLight = {
-  enabled: true,
+  visible: true,
   type: 'PointLight',
+  name: '点光',
   position: [120, 50, 0],
-  distance: 260,
-  intensity: 0.5,
-  color: 'rgba(255, 255, 255, 1)',
+  distance: 0,
+  intensity: 1,
+  color: 'rgba(255, 255, 255)',
   light: null,
-  entity: null,
 }
 const defaultSpotLight = {
-  enabled: true,
+  visible: true,
   type: 'SpotLight',
+  name: '聚光',
   position: [61, -22, 167],
-  rotation: [105, 230, 0],
-  penumbra: 7,
-  angle: 8,
-  distance: 260,
-  intensity: 1.5,
-  color: 'rgba(255, 255, 255, 1)',
+  angle: Math.PI / 3,
+  distance: 0,
+  intensity: 1,
+  color: 'rgba(255, 255, 255)',
   light: null,
-  entity: null,
 }
-const lights = reactive([
-
-
-])
+const lights = reactive<LightSettings[]>([])
 function handleDrop(e: DragEvent) {
   isDragging.value = false
   if (e.dataTransfer?.files) {
-    initScene(e.dataTransfer.files[0]);
+    // initScene(e.dataTransfer.files[0]);
   }
 
 }
-onMounted(() => {
-  initScene()
-})
 
-function reRenderLight() {
+
+function renderLight() {
   for (let i = 0; i < lights.length; i++) {
     if (lights[i].light) {
-      scene.remove(lights[i].light)
+      (lights[i] as any).light.removeFromParent()
     }
+    if (!lights[i].visible) { continue }
     let light
-    if (lights[i].type === 'DirectLight') {
+    switch (lights[i].type) {
+      case 'AmbientLight':
+        light = new THREE.AmbientLight(lights[i].color, lights[i].intensity);
+        break;
+      case 'DirectionalLight':
+        light = new THREE.DirectionalLight(lights[i].color, lights[i].intensity);
+        break;
+      case 'HemisphereLight':
+        light = new THREE.HemisphereLight(lights[i].skyColor, lights[i].groundColor, lights[i].intensity);
+        break;
+      case 'PointLight':
+        light = new THREE.PointLight(lights[i].color, lights[i].intensity, 0);
+        break;
+      case 'SpotLight':
+        light = new THREE.SpotLight(lights[i].color, lights[i].intensity, 0, lights[i].angle);
 
-      light = new THREE.DirectionalLight();
-      scene.add(light);
-    } else if (lights[i].type === 'PointLight') {
-      light = new THREE.PointLight();
-      scene.add(light);
-    } else if (lights[i].type === 'SpotLight') {
-      light = new THREE.DirectionalLight();
-      scene.add(light);
+        break;
+      default:
+        break;
     }
-    lights[i].light = light;
+    scene.add(light)
+    lights[i].light = light
   }
 }
+
+
 function initScene() {
   const renderer = new THREE.WebGLRenderer({
     alpha: true,
@@ -111,38 +122,24 @@ function initScene() {
   renderer.setSize(600, 600);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
   boxRef.value.appendChild(renderer.domElement);
-
   const loader = new GLTFLoader()
   const dracoLoader = new DRACOLoader()
   dracoLoader.setDecoderPath('/draco/');
   dracoLoader.preload();
   loader.setDRACOLoader(dracoLoader)
-  loader.load('/cat7.0.gltf', function (gltf) {
-    console.log(gltf);
-
-    ambientLightObject = new THREE.AmbientLight();
-    scene.add(ambientLightObject);
-
-
-    // const pointLight = new THREE.PointLight("rgba(255,255,255,1)", .3)
-    // pointLight.position.set(60, 111, 189)
-    // pointLight.castShadow = true;
-
-    // const directionalLight = new THREE.DirectionalLight("rgba(255,255,255,1)", 0.62);
-    // directionalLight.position.set(183.6, 29.15, 41.835)
-    // scene.add(pointLight);
-
-    reRenderLight()
-
+  loader.load('/cat7.0.gltf', function (gltf: GltfType) {
+    renderLight()
     scene.add(gltf.scene);
     const mixer = new THREE.AnimationMixer(scene);
+    console.log(gltf.cameras[0]);
+
     mixer.clipAction(gltf.animations[0]).play()
     const animate = () => {
       requestAnimationFrame(animate);
       const delta = clock.getDelta()
       renderer.render(scene, gltf.cameras[0]);
+      
       mixer.update(delta)
     }
     animate()
@@ -157,31 +154,29 @@ watchEffect(() => {
   // return
   for (let i = 0; i < lights.length; i++) {
     const current = lights[i];
-    // console.log(current.light);
-
     if (current.light) {
-      // console.log(current.light, '.asd', ...current.rotation);
-
+      current.light.visible = current.visible;
       current.light.intensity = current.intensity;
-      current.light.color = (new THREE.Color(current.color));
-
-      // current.light.shadowType = 3;
-
       switch (current.type) {
-        case 'DirectLight':
-          current.light.position.set(new THREE.Vector3(...current.rotation))
+        case 'AmbientLight':
+          current.light.color = (new THREE.Color(current.color));
+          break;
+        case 'DirectionalLight':
+          current.light.color = (new THREE.Color(current.color));
+          current.light.position.set(...(current as DirectionalLightSettings).position)
+          break;
+        case 'HemisphereLight':
+          current.light.color = (new THREE.Color(current.skyColor));
+          current.light.groundColor = (new THREE.Color(current.groundColor));
           break;
         case 'PointLight':
-          current.light.distance = current.distance;
-          current.light.position.set(new THREE.Vector3(...current.position))
-
+          current.light.color = (new THREE.Color(current.color));
+          current.light.position.set(...(current as PointLightSettings).position)
           break;
         case 'SpotLight':
-          current.light.distance = current.distance;
-          current.light.angle = Math.PI / current.angle;
-          current.light.penumbra = Math.PI / current.penumbra;
-          current.entity.transform.setPosition(...current.position)
-          current.entity.transform.setRotation(...current.rotation)
+          current.light.color = (new THREE.Color(current.color));
+          current.light.angle = (current as SpotLightSettings).angle;
+          current.light.position.set(...(current as SpotLightSettings).position)
           break;
         default:
           break
@@ -199,21 +194,6 @@ watchEffect(() => {
   }
 
 })
-
-watchEffect(() => {
-  const { intensity = 0, color = 'rgba(255,255,255,1)' } = ambientLight;
-  if (scene && ambientLightObject) {
-    console.log(ambientLightObject);
-    ambientLightObject.intensity = intensity;
-    ambientLightObject.color = new THREE.Color(color);
-    // scene.ambientLight.diffuseIntensity = intensity;
-    // scene.ambientLight.diffuseSolidColor.set(color)
-    // if (isGotStorage.value) {
-    //   localStorage.setItem('ambient', JSON.stringify(ambientLight))
-    // }
-  }
-
-})
 function getStorage() {
   const storageLights = JSON.parse(localStorage.getItem('lights') || '[]')
   lights.push(...storageLights)
@@ -226,58 +206,50 @@ function getStorage() {
   }
   isGotStorage.value = true;
 }
-const options = [defaultDirectLight, defaultPointLight, defaultSpotLight]
-const selectValue = ref('DirectLight')
+const options = [defaultAmbientLightSetting, defaultDirectLight, defaultHemisphereLight, defaultPointLight, defaultSpotLight]
+const selectValue = ref('AmbientLight')
 
 function handleAdd() {
-  const newLight = JSON.parse(JSON.stringify([defaultDirectLight, defaultPointLight, defaultSpotLight].find(v => v.type === selectValue.value)))
+  const newLight = JSON.parse(JSON.stringify(options.find(v => v.type === selectValue.value)))
   lights.push(newLight)
-  reRenderLight();
+  renderLight();
+  console.log(scene.children);
+
 }
-function del(index) {
-  scene.remove(lights[index].light);
-  lights.splice(index, 1)
+function del(index: number) {
+  (lights[index] as any).light.removeFromParent()
+  lights.splice(index, 1);
+  console.log(scene.children);
+
 }
+onMounted(() => {
+  initScene()
+})
 </script>
 
 <template>
   <div class="container">
     <div class="model">
-      <!-- <div class="drag" @drop.prevent="handleDrop" @dragover.prevent="handleDragOver" @dragleave.prevent="handleDragLeave"
-                                        @dragenter.prevent="handleDragEnter" v-if="!hasModel">
-                                        <div class="mask" v-show="isDragging"> </div>
-                                        拖动模型到此
-                                      </div> -->
+      <div class="drag" @drop.prevent="handleDrop" @dragover.prevent="handleDragOver" @dragleave.prevent="handleDragLeave"
+        @dragenter.prevent="handleDragEnter" v-if="!hasModel">
+        <div class="mask" v-show="isDragging"> </div>
+        拖动模型到此
+      </div>
       <div class="bg">
         <div class="box" ref="boxRef"></div>
       </div>
     </div>
     <div class="controller">
       <div class="header">
-
         <el-select v-model="selectValue" class="m-2" placeholder="选择光源" size="large">
-          <el-option v-for="item in options" :key="item.type" :label="item.type" :value="item.type" />
+          <el-option v-for="item in options" :key="item.type" :label="item.name" :value="item.type" />
         </el-select>
-
-
         <el-button type="primary" @click="handleAdd">增加</el-button>
       </div>
-
-      <AmbientLightController v-model:intensity="ambientLight.intensity" v-model:color="ambientLight.color" />
-      <template v-for="(item, index) in lights">
-        <DirectLightController v-model:enabled="item.enabled" v-model:intensity="item.intensity"
-          v-model:color="item.color" v-model:rotation="item.rotation" v-model:enableShadow="item.enableShadow"
-          v-model:shadowBias="item.shadowBias" v-model:shadowNormalBias="item.shadowNormalBias"
-          v-model:shadowNearPlane="item.shadowNearPlane" v-model:shadowStrength="item.shadowStrength"
-          v-if="item.type === 'DirectLight'" @handleDel="del(index)" />
-        <PointLightController v-model:enabled="item.enabled" v-model:intensity="item.intensity"
-          v-model:distance="item.distance" v-model:color="item.color" v-model:position="item.position"
-          v-if="item.type === 'PointLight'" @handleDel="del(index)" />
-        <SpotLightController v-model:enabled="item.enabled" v-model:intensity="item.intensity"
-          v-model:distance="item.distance" v-model:penumbra="item.penumbra" v-model:angle="item.angle"
-          v-model:color="item.color" v-model:position="item.position" v-model:rotation="item.rotation"
-          v-if="item.type === 'SpotLight'" @handleDel="del(index)" />
-      </template>
+      <LightController :type="item.type" v-for="(item, index) in lights" :key="index" v-model:angle="item.angle"
+        v-model:color="item.color" v-model:skyColor="item.skyColor" v-model:position="item.position"
+        v-model:groundColor="item.groundColor" v-model:intensity="item.intensity" v-model:visible="item.visible"
+        @handleDel="del(index)" />
     </div>
   </div>
 </template>
