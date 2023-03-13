@@ -130,18 +130,18 @@ function initScene() {
   dracoLoader.setDecoderPath('/draco/');
   dracoLoader.preload();
   loader.setDRACOLoader(dracoLoader)
-  loader.load('/cat7.0.gltf', function (gltf: GltfType) {
+  loader.load('/cat7.0.gltf', function (gltf: any) {
     console.log(gltf);
-    gltf.scene.children?.forEach(v=>{
+    // gltf.scene.children?.forEach(v=>{
       // if(v.)
-    })
+    // })
     //Create a plane that receives shadows (but does not cast them)
-    const planeGeometry = new THREE.PlaneGeometry(300, 300);
-    const planeMaterial = new THREE.MeshStandardMaterial({ color: 'pink' })
-    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-    plane.rotation.x = -90 * Math.PI / 180;
-    plane.receiveShadow = true;
-    scene.add(plane);
+    // const planeGeometry = new THREE.PlaneGeometry(300, 300);
+    // const planeMaterial = new THREE.MeshStandardMaterial({ color: 'pink' })
+    // const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    // plane.rotation.x = -90 * Math.PI / 180;
+    // plane.receiveShadow = true;
+    // scene.add(plane);
 
     getStorage();
     renderLight()
@@ -156,7 +156,7 @@ function initScene() {
       mixer.update(delta)
     }
     animate()
-  }, undefined, function (error) {
+  }, undefined, function (error:any) {
     console.error(error);
   });
 
